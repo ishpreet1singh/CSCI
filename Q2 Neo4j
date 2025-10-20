@@ -1,0 +1,17 @@
+MATCH (d:Node {id:"Disease::DOID:263"})
+WITH d,
+     [ (d)-[:DLA]->(a) | a ] AS locs,
+     apoc.coll.toSet([ (c)-[r]->(d) WHERE toUpper(type(r)) IN ['CTD','CPD'] | c ]) AS known
+CALL {
+  WITH locs, known
+  MATCH (c)-[:CUG]->(g)<-[:ADG]-(l)
+  WHERE l IN locs AND NOT c IN known
+  RETURN collect(DISTINCT {compound_name:c.name, via_gene_name:g.name, via_location_name:l.name, pattern:'CuG+AdG'}) AS A
+}
+CALL {
+  WITH locs, known
+  MATCH (c)-[:CDG]->(g)<-[:AUG]-(l)
+  WHERE l IN locs AND NOT c IN known
+  RETURN collect(DISTINCT {compound_name:c.name, via_gene_name:g.name, via_location_name:l.name, pattern:'CdG+AuG'}) AS B
+}
+RETURN { disease_id:d.id, disease_name:d.name, novel_candidates:(A+B)[0..25] } AS result;
