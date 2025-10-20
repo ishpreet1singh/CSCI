@@ -1,0 +1,11 @@
+MATCH (d:Node {id:"Disease::DOID:263"})
+RETURN {
+  disease_id: d.id,
+  disease_name: d.name,
+  drugs_treat:     apoc.coll.toSet([ (c)-[r]->(d) WHERE toUpper(type(r))='CTD' | c.name ]),
+  drugs_palliate:  apoc.coll.toSet([ (c)-[r]->(d) WHERE toUpper(type(r))='CPD' | c.name ]),
+  genes_causal_or_assoc: apoc.coll.toSet(
+      [ (d)-[r]->(g) WHERE right(toUpper(type(r)),2)='DG' | g.name ] +
+      [ (g)-[r]->(d) WHERE right(toUpper(type(r)),2)='GD' | g.name ]),
+  locations:       apoc.coll.toSet([ (d)-[r]->(a) WHERE toUpper(type(r))='DLA' | a.name ])
+} AS result;
